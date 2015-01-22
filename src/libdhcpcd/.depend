@@ -1,0 +1,3 @@
+dhcpcd.o: dhcpcd.c ../../config.h dhcpcd.h
+config.o: config.c dhcpcd.h
+wpa.o: wpa.c ../../config.h dhcpcd.h
