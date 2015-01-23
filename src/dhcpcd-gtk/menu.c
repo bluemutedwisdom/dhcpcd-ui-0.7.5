@@ -256,7 +256,7 @@ menu_update_scans(WI_SCAN *wi, DHCPCD_WI_SCAN *scans)
 			wim = create_menu(wi, s);
 			TAILQ_INSERT_TAIL(&wi->menus, wim, next);
 			gtk_menu_shell_insert(GTK_MENU_SHELL(wi->ifmenu),
-			    wim->menu, position);
+				wim->menu, is_associated(wi, s) ? 0 : position);
 			gtk_widget_show_all(wim->menu);
 		}
 	}
