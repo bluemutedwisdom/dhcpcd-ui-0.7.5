@@ -189,7 +189,7 @@ create_menu(WI_SCAN *wis, DHCPCD_WI_SCAN *scan)
 	if (scan->wpa_flags[0] == '\0')
 		gtk_widget_set_tooltip_text(wim->menu, scan->bssid);
 	else {
-		tip = g_strconcat(scan->bssid, " ", scan->wpa_flags, NULL);
+		char *tip = g_strconcat(scan->bssid, " ", scan->wpa_flags, NULL);
 		gtk_widget_set_tooltip_text(wim->menu, tip);
 		g_free(tip);
 	}
@@ -348,7 +348,6 @@ static gboolean
 menu_bgscan(gpointer data)
 {
 	WI_SCAN *w;
-	DHCPCD_CONNECTION *con;
 	DHCPCD_WPA *wpa;
 
 	if (menu == NULL || !gtk_widget_get_visible(menu)) {
@@ -356,10 +355,9 @@ menu_bgscan(gpointer data)
 		return FALSE;
 	}
 
-	con = (DHCPCD_CONNECTION *)data;
 	TAILQ_FOREACH(w, &wi_scans, next) {
 		if (w->interface->wireless && w->interface->up) {
-			wpa = dhcpcd_wpa_find(con, w->interface->ifname);
+			wpa = dhcpcd_wpa_find(dhcpcd_if_connection (w->interface), w->interface->ifname);
 			if (wpa)
 				dhcpcd_wpa_scan(wpa);
 		}
@@ -409,7 +407,7 @@ on_activate(GtkStatusIcon *icon)
 
 #ifdef BG_SCAN
 		bgscan_timer = g_timeout_add(DHCPCD_WPA_SCAN_SHORT,
-		    menu_bgscan, dhcpcd_if_connection(w->interface));
+		    menu_bgscan, NULL);
 #endif
 	}
 }
