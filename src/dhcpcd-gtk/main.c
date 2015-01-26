@@ -612,6 +612,7 @@ dhcpcd_wpa_scan_cb(DHCPCD_WPA *wpa, _unused void *data)
 		w->interface = i;
 		w->scans = scans;
 		w->ifmenu = NULL;
+		w->sep = NULL;
 		TAILQ_INIT(&w->menus);
 		TAILQ_INSERT_TAIL(&wi_scans, w, next);
 	} else {
@@ -689,6 +690,7 @@ bgscan(gpointer data)
 				dhcpcd_wpa_scan(wpa);
 		}
 	}
+
 	return TRUE;
 }
 #endif

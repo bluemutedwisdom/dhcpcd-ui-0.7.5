@@ -200,8 +200,6 @@ menu_update_scans(WI_SCAN *wi, DHCPCD_WI_SCAN *scans)
 {
 	WI_MENU *wim, *win;
 	DHCPCD_WI_SCAN *s;
-	bool found;
-	int position;
 
 	if (wi->ifmenu == NULL) {
 		dhcpcd_wi_scans_free(wi->scans);
@@ -209,47 +207,40 @@ menu_update_scans(WI_SCAN *wi, DHCPCD_WI_SCAN *scans)
 		return;
 	}
 
-	TAILQ_FOREACH_SAFE(wim, &wi->menus, next, win) {
-		found = false;
-		for (s = scans; s; s = s->next) {
-			if (strcmp(wim->scan->ssid, s->ssid) == 0) {
-				/* If assoication changes, we
-				 * need to remove the item to replace it */
-				if (wim->associated ==
-				    is_associated(wi, s))
-				{
-					found = true;
-					update_item(wi, wim, s);
-				}
-				break;
-			}
-		}
-		if (!found) {
-			TAILQ_REMOVE(&wi->menus, wim, next);
-			gtk_widget_destroy(wim->menu);
-			g_free(wim);
+	// clear down the menu
+	TAILQ_FOREACH_SAFE (wim, &wi->menus, next, win)
+	{
+		TAILQ_REMOVE (&wi->menus, wim, next);
+		gtk_widget_destroy (wim->menu);
+		g_free (wim);
+	}
+	if (wi->sep) gtk_widget_destroy (wi->sep);
+	wi->sep = NULL;
+
+	// loop through all scans, locating any associated AP
+	for (s = scans; s; s = s->next)
+	{
+		if (is_associated (wi, s))
+		{
+			wim = create_menu (wi, s);
+			TAILQ_INSERT_TAIL (&wi->menus, wim, next);
+			gtk_menu_shell_append (GTK_MENU_SHELL (wi->ifmenu), wim->menu);
+			gtk_widget_show_all (wim->menu);
+			wi->sep = gtk_separator_menu_item_new ();
+			gtk_widget_show (wi->sep);
+			gtk_menu_shell_append (GTK_MENU_SHELL (wi->ifmenu), wi->sep);
 		}
 	}
 
-	for (s = scans; s; s = s->next) {
-		found = false;
-		position = 0;
-		TAILQ_FOREACH(wim, &wi->menus, next) {
-			if (strcmp(wim->scan->ssid, s->ssid) == 0) {
-				found = true;
-				break;
-			}
-			/* Assoicated scans are always first */
-			if (!is_associated(wi, s) &&
-			    dhcpcd_wi_scan_compare(wim->scan, s) < 0)
-				position++;
-		}
-		if (!found) {
-			wim = create_menu(wi, s);
-			TAILQ_INSERT_TAIL(&wi->menus, wim, next);
-			gtk_menu_shell_insert(GTK_MENU_SHELL(wi->ifmenu),
-				wim->menu, is_associated(wi, s) ? 0 : position);
-			gtk_widget_show_all(wim->menu);
+	// loop through all scans, adding all unassociated APs
+	for (s = scans; s; s = s->next)
+	{
+		if (!is_associated (wi, s))
+		{
+			wim = create_menu (wi, s);
+			TAILQ_INSERT_TAIL (&wi->menus, wim, next);
+			gtk_menu_shell_append (GTK_MENU_SHELL (wi->ifmenu), wim->menu);
+			gtk_widget_show_all (wim->menu);
 		}
 	}
 
@@ -288,19 +279,33 @@ add_scans(WI_SCAN *wi)
 	GtkWidget *m;
 	DHCPCD_WI_SCAN *wis;
 	WI_MENU *wim;
-	int position;
 
 	if (wi->scans == NULL)
 		return NULL;
 
 	m = gtk_menu_new();
-	position = 0;
-	for (wis = wi->scans; wis; wis = wis->next) {
-		wim = create_menu(wi, wis);
-		TAILQ_INSERT_TAIL(&wi->menus, wim, next);
-		gtk_menu_shell_insert(GTK_MENU_SHELL(m),
-		    wim->menu, is_associated(wi, wis) ? 0 : position);
-		position++;
+
+	wi->sep = NULL;
+	for (wis = wi->scans; wis; wis = wis->next)
+	{
+		if (is_associated (wi, wis))
+		{
+			wim = create_menu (wi, wis);
+			TAILQ_INSERT_TAIL (&wi->menus, wim, next);
+			gtk_menu_shell_append (GTK_MENU_SHELL (m), wim->menu);
+			wi->sep = gtk_separator_menu_item_new ();
+			gtk_widget_show (wi->sep);
+			gtk_menu_shell_append (GTK_MENU_SHELL (m), wi->sep);
+		}
+	}
+	for (wis = wi->scans; wis; wis = wis->next)
+	{
+		if (!is_associated (wi, wis))
+		{
+			wim = create_menu (wi, wis);
+			TAILQ_INSERT_TAIL (&wi->menus, wim, next);
+			gtk_menu_shell_append (GTK_MENU_SHELL (m), wim->menu);
+		}
 	}
 
 	return m;
@@ -321,6 +326,7 @@ menu_abort(void)
 
 	TAILQ_FOREACH(wis, &wi_scans, next) {
 		wis->ifmenu = NULL;
+		wis->sep = NULL;
 		while ((wim = TAILQ_FIRST(&wis->menus))) {
 			TAILQ_REMOVE(&wis->menus, wim, next);
 			g_free(wim);

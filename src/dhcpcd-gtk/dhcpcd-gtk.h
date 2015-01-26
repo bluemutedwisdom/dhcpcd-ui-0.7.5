@@ -64,6 +64,7 @@ typedef struct wi_scan {
 	DHCPCD_WI_SCAN *scans;
 
 	GtkWidget *ifmenu;
+	GtkWidget *sep;
 	WI_MENUS menus;
 } WI_SCAN;
 
