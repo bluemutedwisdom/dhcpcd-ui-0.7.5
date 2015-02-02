@@ -215,7 +215,7 @@ update_online(DHCPCD_CONNECTION *con, bool showif)
 			g_message("%s: %s", i->ifname, i->reason);
 	}
 
-	if (online != ison || carrier != iscarrier) {
+//	if (online != ison || carrier != iscarrier) {
 		online = ison;
 		carrier = iscarrier;
 		if (ani_timer != 0) {
@@ -233,7 +233,7 @@ update_online(DHCPCD_CONNECTION *con, bool showif)
 			gtk_status_icon_set_from_icon_name(status_icon,
 			    "network-offline");
 		}
-	}
+//	}
 	gtk_status_icon_set_tooltip_text(status_icon, msgs);
 	g_free(msgs);
 }
