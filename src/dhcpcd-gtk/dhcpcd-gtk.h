@@ -65,6 +65,7 @@ typedef struct wi_scan {
 
 	GtkWidget *ifmenu;
 	GtkWidget *sep;
+	GtkWidget *noap;
 	WI_MENUS menus;
 } WI_SCAN;
 

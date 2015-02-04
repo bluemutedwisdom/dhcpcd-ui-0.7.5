@@ -216,6 +216,8 @@ menu_update_scans(WI_SCAN *wi, DHCPCD_WI_SCAN *scans)
 	}
 	if (wi->sep) gtk_widget_destroy (wi->sep);
 	wi->sep = NULL;
+	if (wi->noap) gtk_widget_destroy (wi->noap);
+	wi->noap = NULL;
 
 	// loop through all scans, locating any associated AP
 	for (s = scans; s; s = s->next)
@@ -280,8 +282,15 @@ add_scans(WI_SCAN *wi)
 	DHCPCD_WI_SCAN *wis;
 	WI_MENU *wim;
 
+	wi->noap = NULL;
+
 	if (wi->scans == NULL)
-		return NULL;
+	{
+		m = gtk_menu_new ();
+		wi->noap = gtk_menu_item_new_with_label ("No APs found");
+		gtk_menu_shell_append(GTK_MENU_SHELL(m), wi->noap);
+		return m;
+	}
 
 	m = gtk_menu_new();
 
@@ -327,6 +336,7 @@ menu_abort(void)
 	TAILQ_FOREACH(wis, &wi_scans, next) {
 		wis->ifmenu = NULL;
 		wis->sep = NULL;
+		wis->noap = NULL;
 		while ((wim = TAILQ_FIRST(&wis->menus))) {
 			TAILQ_REMOVE(&wis->menus, wim, next);
 			g_free(wim);
@@ -354,11 +364,11 @@ menu_bgscan(gpointer data)
 	}
 
 	TAILQ_FOREACH(w, &wi_scans, next) {
-		if (w->interface->wireless && w->interface->up) {
+		//if (w->interface->wireless && w->interface->up) {
 			wpa = dhcpcd_wpa_find(dhcpcd_if_connection (w->interface), w->interface->ifname);
 			if (wpa)
 				dhcpcd_wpa_scan(wpa);
-		}
+		//}
 	}
 
 	return TRUE;

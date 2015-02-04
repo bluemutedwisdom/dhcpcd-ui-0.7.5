@@ -613,6 +613,7 @@ dhcpcd_wpa_scan_cb(DHCPCD_WPA *wpa, _unused void *data)
 		w->scans = scans;
 		w->ifmenu = NULL;
 		w->sep = NULL;
+		w->noap = NULL;
 		TAILQ_INIT(&w->menus);
 		TAILQ_INSERT_TAIL(&wi_scans, w, next);
 	} else {
