@@ -287,7 +287,7 @@ add_scans(WI_SCAN *wi)
 	if (wi->scans == NULL)
 	{
 		m = gtk_menu_new ();
-		wi->noap = gtk_menu_item_new_with_label ("No APs found");
+		wi->noap = gtk_menu_item_new_with_label (_("No APs found - scanning..."));
 		gtk_menu_shell_append(GTK_MENU_SHELL(m), wi->noap);
 		return m;
 	}
