@@ -200,6 +200,7 @@ menu_update_scans(WI_SCAN *wi, DHCPCD_WI_SCAN *scans)
 {
 	WI_MENU *wim, *win;
 	DHCPCD_WI_SCAN *s;
+	gboolean separate = FALSE;
 
 	if (wi->ifmenu == NULL) {
 		dhcpcd_wi_scans_free(wi->scans);
@@ -228,9 +229,7 @@ menu_update_scans(WI_SCAN *wi, DHCPCD_WI_SCAN *scans)
 			TAILQ_INSERT_TAIL (&wi->menus, wim, next);
 			gtk_menu_shell_append (GTK_MENU_SHELL (wi->ifmenu), wim->menu);
 			gtk_widget_show_all (wim->menu);
-			wi->sep = gtk_separator_menu_item_new ();
-			gtk_widget_show (wi->sep);
-			gtk_menu_shell_append (GTK_MENU_SHELL (wi->ifmenu), wi->sep);
+			separate = TRUE;
 		}
 	}
 
@@ -241,6 +240,13 @@ menu_update_scans(WI_SCAN *wi, DHCPCD_WI_SCAN *scans)
 		{
 			wim = create_menu (wi, s);
 			TAILQ_INSERT_TAIL (&wi->menus, wim, next);
+			if (separate)
+			{
+				wi->sep = gtk_separator_menu_item_new ();
+				gtk_widget_show (wi->sep);
+				gtk_menu_shell_append (GTK_MENU_SHELL (wi->ifmenu), wi->sep);
+				separate = FALSE;
+			}
 			gtk_menu_shell_append (GTK_MENU_SHELL (wi->ifmenu), wim->menu);
 			gtk_widget_show_all (wim->menu);
 		}
@@ -262,9 +268,21 @@ menu_remove_if(WI_SCAN *wi)
 		return;
 
 	if (wi->ifmenu == menu)
+	{
 		menu = NULL;
-
-	gtk_widget_destroy(wi->ifmenu);
+		gtk_widget_destroy(wi->ifmenu);
+	}
+	else
+	{
+		/* if there are multiple interfaces and hence a top-level menu, remove the entry for the removed interface */
+		GList *children = gtk_container_get_children (GTK_CONTAINER(menu));
+        while ((children = g_list_next(children)) != NULL) 
+        {
+        	GtkWidget *item = children->data;
+        	if (!strcmp (gtk_menu_item_get_label (GTK_MENU_ITEM(item)), wi->interface->ifname))
+        		gtk_widget_destroy (GTK_WIDGET(item));
+        }		
+	}
 	wi->ifmenu = NULL;
 	while ((wim = TAILQ_FIRST(&wi->menus))) {
 		TAILQ_REMOVE(&wi->menus, wim, next);
@@ -281,6 +299,7 @@ add_scans(WI_SCAN *wi)
 	GtkWidget *m;
 	DHCPCD_WI_SCAN *wis;
 	WI_MENU *wim;
+	gboolean separate = FALSE;
 
 	wi->noap = NULL;
 
@@ -302,9 +321,7 @@ add_scans(WI_SCAN *wi)
 			wim = create_menu (wi, wis);
 			TAILQ_INSERT_TAIL (&wi->menus, wim, next);
 			gtk_menu_shell_append (GTK_MENU_SHELL (m), wim->menu);
-			wi->sep = gtk_separator_menu_item_new ();
-			gtk_widget_show (wi->sep);
-			gtk_menu_shell_append (GTK_MENU_SHELL (m), wi->sep);
+			separate = TRUE;
 		}
 	}
 	for (wis = wi->scans; wis; wis = wis->next)
@@ -313,6 +330,13 @@ add_scans(WI_SCAN *wi)
 		{
 			wim = create_menu (wi, wis);
 			TAILQ_INSERT_TAIL (&wi->menus, wim, next);
+			if (separate)
+			{
+				wi->sep = gtk_separator_menu_item_new ();
+				gtk_widget_show (wi->sep);
+				gtk_menu_shell_append (GTK_MENU_SHELL (m), wi->sep);
+				separate = FALSE;
+			}
 			gtk_menu_shell_append (GTK_MENU_SHELL (m), wim->menu);
 		}
 	}
